@@ -22,7 +22,9 @@ class Model(nn.Module):
         self.decoder = decoder
 
         # loss
-        self.smplx_layer = copy.deepcopy(self.smpl_x.layer['neutral']).cuda()
+        # self.smplx_layer = copy.deepcopy(self.smpl_x.layer['neutral']).cuda()
+        self.smplx_layer = copy.deepcopy(self.smpl_x.layer['male']).cuda()
+
         self.coord_loss = CoordLoss()
         self.param_loss = ParamLoss()
 

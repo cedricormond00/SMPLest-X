@@ -19,16 +19,16 @@ mkdir -p $OUTPUT_PATH
 END_COUNT=$(find "$IMG_PATH" -type f | wc -l)
 
 # inference with smplest_x
-# PYTHONPATH=../:$PYTHONPATH \
-# python main/inference_c.py \
-#     --img_path $IMG_PATH \
-#     --output_path $OUTPUT_PATH \
-#     --take_name $TAKE_NAME \
-#     --cam_id $CAM_ID \
-#     --num_gpus 1 \
-#     --ckpt_name $CKPT_NAME \
-#     --end $END_COUNT \
-#     # --file_name $NAME \
+PYTHONPATH=../:$PYTHONPATH \
+python main/inference_c.py \
+    --img_path $IMG_PATH \
+    --output_path $OUTPUT_PATH \
+    --take_name $TAKE_NAME \
+    --cam_id $CAM_ID \
+    --num_gpus 1 \
+    --ckpt_name $CKPT_NAME \
+    --end $END_COUNT \
+    # --file_name $NAME \
 
 
 # convert frames to video
