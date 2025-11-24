@@ -16,6 +16,7 @@ from main.config import Config
 from utils.data_utils import load_img, process_bbox, generate_patch_image
 from utils.visualization_utils import render_mesh
 from utils.inference_utils import non_max_suppression
+import pickle
 
 
 def parse_args():
@@ -32,6 +33,69 @@ def parse_args():
     parser.add_argument('--multi_person', action='store_true')
     args = parser.parse_args()
     return args
+
+def save_smplx_params(out, frame_idx, output_folder, cam_id, person_idx=0):
+    """
+    Save SMPL-X parameters for one person in one frame to a PKL.
+    We **ignore cam_trans** (set transl=0) and also save joints_cam
+    so we can realign to world later using registration.
+    """
+
+    def extract(key):
+        if key not in out:
+            return None
+        v = out[key]
+        if isinstance(v, torch.Tensor):
+            v = v.detach().cpu().numpy()
+        if v.ndim >= 2:
+            v = v[person_idx]
+        return v.astype(np.float32)
+
+    # body params from SMPLest-X
+    global_orient = extract("smplx_root_pose")   # (3,)
+    body_pose     = extract("smplx_body_pose")   # (63,)
+    jaw_pose      = extract("smplx_jaw_pose")    # (3,)
+    lhand_pose    = extract("smplx_lhand_pose")  # (45,)
+    rhand_pose    = extract("smplx_rhand_pose")  # (45,)
+    betas_raw     = extract("smplx_shape")       # (10,)
+
+    # simplest: use zero-betas (average body) first:
+    # betas = np.zeros_like(betas_raw, dtype=np.float32)
+    betas= betas_raw
+    # later you can replace with per-subject mean betas from registration
+
+    # kill noisy camera translation
+    transl = np.zeros(3, dtype=np.float32)
+
+    # also save joints in camera frame for later world alignment
+    joints_cam = extract("smplx_joint_cam")  # (137,3)
+
+    params = {
+        "global_orient":   global_orient,
+        "body_pose":       body_pose,
+        "jaw_pose":        jaw_pose,
+        "left_hand_pose":  lhand_pose,
+        "right_hand_pose": rhand_pose,
+        "betas":           betas,
+        "transl":          transl,
+        "joints_cam":      joints_cam,  # extra, for later alignment
+        "frame_idx":       int(frame_idx),
+    }
+
+    # minimal sanity check
+    for k in ["global_orient", "body_pose", "left_hand_pose",
+              "right_hand_pose", "betas", "transl"]:
+        if params[k] is None:
+            raise RuntimeError(f"Missing key '{k}' in out for frame {frame_idx}")
+
+    smplx_out_dir = osp.join(output_folder, "smplx_params", cam_id)
+    os.makedirs(smplx_out_dir, exist_ok=True)
+    fname = f"mesh-{frame_idx:05d}_smplx.pkl"
+    out_path = osp.join(smplx_out_dir, fname)
+
+    with open(out_path, "wb") as f:
+        pickle.dump(params, f, protocol=2)
+
 
 def main():
     args = parse_args()
@@ -140,7 +204,11 @@ def main():
             with torch.no_grad():
                 out = demoer.model(inputs, targets, meta_info, 'test')
 
-            
+            # save SMPL-X parameters for this frame/person
+            save_smplx_params(out, frame_idx=frame,
+                              output_folder=output_folder,
+                              cam_id=args.cam_id,
+                              person_idx=bbox_id)
 
             mesh = out['smplx_mesh_cam'].detach().cpu().numpy()[0]
 
