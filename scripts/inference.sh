@@ -40,7 +40,13 @@ python main/inference.py \
 # convert frames to video
 case "$EXT" in
     mp4|avi|mov|mkv|flv|wmv|webm|mpeg|mpg)
-        ffmpeg -y -f image2 -r ${FPS} -i ${OUTPUT_PATH}/%06d.jpg -vcodec mjpeg -qscale 0 -pix_fmt yuv420p ./demo/result_${NAME}.mp4
+        # ffmpeg -y -f image2 -r ${FPS} -i ${OUTPUT_PATH}/%06d.jpg -vcodec mjpeg -qscale 0 -pix_fmt yuv420p ./demo/result_${NAME}.mp4
+        ffmpeg -y -framerate ${FPS} \
+            -i ${OUTPUT_PATH}/%06d.jpg \
+            -c:v mpeg4 \
+            -q:v 2 \
+            -pix_fmt yuv420p \
+            ./demo/result_${NAME}.mp4
         ;;
     jpg|jpeg|png|bmp|gif|tiff|tif|webp|svg)
         cp $OUTPUT_PATH/000001.$EXT ./demo/result_$FILE_NAME
@@ -50,6 +56,6 @@ case "$EXT" in
         ;;
 esac
 
-rm -rf ./demo/input_frames
-rm -rf ./demo/output_frames
+# rm -rf ./demo/input_frames
+# rm -rf ./demo/output_frames
 

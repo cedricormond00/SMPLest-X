@@ -20,8 +20,12 @@ from utils.inference_utils import non_max_suppression
 
 def parse_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--img_path', required=True, type=str, dest='img_path')
+    parser.add_argument('--output_path', required=True, type=str, dest='output_path')
+    parser.add_argument('--take_name', required=True,type=str, dest='take_name', default='take1')
+    parser.add_argument('--cam_id', type=str, dest='cam_id', default='16')
     parser.add_argument('--num_gpus', type=int, dest='num_gpus')
-    parser.add_argument('--file_name', type=str, default='test')
+    # parser.add_argument('--file_name', type=str, default='test')
     parser.add_argument('--ckpt_name', type=str, default='model_dump')
     parser.add_argument('--start', type=str, default=1)
     parser.add_argument('--end', type=str, default=1)
@@ -39,10 +43,11 @@ def main():
     config_path = osp.join('./pretrained_models', args.ckpt_name, 'config_base.py')
     cfg = Config.load_config(config_path)
     checkpoint_path = osp.join('./pretrained_models', args.ckpt_name, f'{args.ckpt_name}.pth.tar')
-    img_folder = osp.join(root_dir, 'demo', 'input_frames', args.file_name)
-    output_folder = osp.join(root_dir, 'demo', 'output_frames', args.file_name)
-    os.makedirs(output_folder, exist_ok=True)
-    exp_name = f'inference_{args.file_name}_{args.ckpt_name}_{time_str}'
+    img_folder = args.img_path
+    output_folder = args.output_path
+    # os.makedirs(output_folder, exist_ok=True)
+    os.makedirs(osp.join(output_folder, 'images_smplx_overlay', args.cam_id), exist_ok=True)
+    exp_name = f'inference_{args.take_name}_cam{args.cam_id}_{time_str}'
 
     new_config = {
         "model": {
@@ -62,7 +67,7 @@ def main():
     # init tester
     demoer = Tester(cfg)
     demoer.logger.info(f"Using 1 GPU.")
-    demoer.logger.info(f'Inference [{args.file_name}] with [{cfg.model.pretrained_model_path}].')
+    demoer.logger.info(f'Inference [{args.take_name}] with [{cfg.model.pretrained_model_path}].')
     demoer._make_model()
 
     # init detector
@@ -153,7 +158,7 @@ def main():
 
         # save rendered image
         frame_name = os.path.basename(img_path)
-        cv2.imwrite(os.path.join(output_folder, frame_name), vis_img[:, :, ::-1])
+        cv2.imwrite(os.path.join(output_folder,'images_smplx_overlay', args.cam_id, frame_name), vis_img[:, :, ::-1])
     for k, v in out.items(): 
         print(k, v.shape)
 
