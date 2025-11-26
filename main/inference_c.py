@@ -66,6 +66,7 @@ def save_smplx_params(out, frame_idx, output_folder, cam_id, person_idx=0):
 
     # kill noisy camera translation
     transl = np.zeros(3, dtype=np.float32)
+    transl = extract("cam_trans")
 
     # also save joints in camera frame for later world alignment
     joints_cam = extract("smplx_joint_cam")  # (137,3)

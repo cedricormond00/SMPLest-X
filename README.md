@@ -89,7 +89,18 @@ sh scripts/inference.sh {MODEL_DIR} {FILE_NAME} {FPS}
 # For inferencing test_video.mp4 (30FPS) with SMPLest-X/pretrained_models/smplest_x_h/smplest_x_h.pth.tar
 sh scripts/inference.sh smplest_x_h test_video.mp4 30
 ```
+### MOdified inference code
+scripts/inference_c.sh is my modified inference pipeline, to work with my pilot study. It automates SMPLest-X inference for a specific take/camera pair in the Oct10 pilot dataset. Supply your checkpoint dir name and take ID, and it will:
 
+Read frames from ```/media/cormond/hdd/data/pilot_oct10/$TAKE_NAME/images/$CAM_ID``` (camera hardcoded to 16).
+Create ```/media/cormond/hdd/data/pilot_oct10/$TAKE_NAME/smplx_2d``` for the outputs.
+Count frames (END_COUNT) and run main/inference_c.py with --img_path, --output_path, --take_name, --cam_id, --ckpt_name, and --end END_COUNT, using PYTHONPATH=../:$PYTHONPATH.
+After overlay frames land in ```${OUTPUT_PATH}/images_smplx_overlay/${CAM_ID}```, it calls ffmpeg to encode them into ```/media/cormond/hdd/data/pilot_oct10/$TAKE_NAME/smplx_2D/smplx_overlay_${TAKE_NAME}_cam${CAM_ID}.mp4``` at the requested FPS (defaults to 30).
+Usage example:
+```bash
+sh scripts/inference_c.sh smplest_x_h bike_take3 30
+```
+where smplest_x_h is your pretrained folder under pretrained_models/, bike_take3 is the take folder name, and 30 is the desired framerate.
 
 ## Training
 ```bash
