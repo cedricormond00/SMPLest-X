@@ -37,7 +37,7 @@ ffmpeg -y -framerate ${FPS} \
     -c:v mpeg4 \
     -q:v 2 \
     -pix_fmt yuv420p \
-    /media/cormond/hdd/data/pilot_oct10/$TAKE_NAME/smplx_2D/smplx_overlay_${TAKE_NAME}_cam${CAM_ID}.mp4
+    /media/cormond/hdd/data/pilot_oct10/$TAKE_NAME/smplx_2d/smplx_overlay_${TAKE_NAME}_cam${CAM_ID}.mp4
 
 
 # rm -rf ./demo/input_frames

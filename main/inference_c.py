@@ -91,7 +91,7 @@ def save_smplx_params(out, frame_idx, output_folder, cam_id, person_idx=0):
 
     smplx_out_dir = osp.join(output_folder, "smplx_params", cam_id)
     os.makedirs(smplx_out_dir, exist_ok=True)
-    fname = f"mesh-{frame_idx:05d}_smplx.pkl"
+    fname = f"mesh-f{frame_idx:05d}_smplx.pkl"
     out_path = osp.join(smplx_out_dir, fname)
 
     with open(out_path, "wb") as f:
