@@ -21,12 +21,8 @@ import pickle
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--img_path', required=True, type=str, dest='img_path')
-    parser.add_argument('--output_path', required=True, type=str, dest='output_path')
-    parser.add_argument('--take_name', required=True,type=str, dest='take_name', default='take1')
-    parser.add_argument('--cam_id', type=str, dest='cam_id', default='16')
     parser.add_argument('--num_gpus', type=int, dest='num_gpus')
-    # parser.add_argument('--file_name', type=str, default='test')
+    parser.add_argument('--file_name', type=str, default='test')
     parser.add_argument('--ckpt_name', type=str, default='model_dump')
     parser.add_argument('--start', type=str, default=1)
     parser.add_argument('--end', type=str, default=1)
@@ -34,7 +30,7 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-def save_smplx_params(out, frame_idx, output_folder, cam_id, person_idx=0):
+def save_smplx_params(out, frame_idx, output_folder, person_idx=0):
     """
     Save SMPL-X parameters for one person in one frame to a PKL.
     We **ignore cam_trans** (set transl=0) and also save joints_cam
@@ -89,7 +85,7 @@ def save_smplx_params(out, frame_idx, output_folder, cam_id, person_idx=0):
         if params[k] is None:
             raise RuntimeError(f"Missing key '{k}' in out for frame {frame_idx}")
 
-    smplx_out_dir = osp.join(output_folder, "smplx_params", cam_id)
+    smplx_out_dir = osp.join(output_folder)
     os.makedirs(smplx_out_dir, exist_ok=True)
     fname = f"mesh-f{frame_idx:05d}_smplx.pkl"
     out_path = osp.join(smplx_out_dir, fname)
@@ -97,7 +93,7 @@ def save_smplx_params(out, frame_idx, output_folder, cam_id, person_idx=0):
     with open(out_path, "wb") as f:
         pickle.dump(params, f, protocol=2)
 
-
+    
 def main():
     args = parse_args()
     cudnn.benchmark = True
@@ -108,11 +104,10 @@ def main():
     config_path = osp.join('./pretrained_models', args.ckpt_name, 'config_base.py')
     cfg = Config.load_config(config_path)
     checkpoint_path = osp.join('./pretrained_models', args.ckpt_name, f'{args.ckpt_name}.pth.tar')
-    img_folder = args.img_path
-    output_folder = args.output_path
-    # os.makedirs(output_folder, exist_ok=True)
-    os.makedirs(osp.join(output_folder, 'images_smplx_overlay', args.cam_id), exist_ok=True)
-    exp_name = f'inference_{args.take_name}_cam{args.cam_id}_{time_str}'
+    img_folder = osp.join(root_dir, 'demo', 'input_frames', args.file_name)
+    output_folder = osp.join(root_dir, 'demo', 'output_frames', args.file_name)
+    os.makedirs(output_folder, exist_ok=True)
+    exp_name = f'inference_{args.file_name}_{args.ckpt_name}_{time_str}'
 
     new_config = {
         "model": {
@@ -132,7 +127,7 @@ def main():
     # init tester
     demoer = Tester(cfg)
     demoer.logger.info(f"Using 1 GPU.")
-    demoer.logger.info(f'Inference [{args.take_name}] with [{cfg.model.pretrained_model_path}].')
+    demoer.logger.info(f'Inference [{args.file_name}] with [{cfg.model.pretrained_model_path}].')
     demoer._make_model()
 
     # init detector
@@ -207,8 +202,9 @@ def main():
 
             # save SMPL-X parameters for this frame/person
             save_smplx_params(out, frame_idx=frame,
-                              output_folder=output_folder,
+                              output_folder="./demo/smplx_params/test_video",
                               person_idx=bbox_id)
+            
 
             mesh = out['smplx_mesh_cam'].detach().cpu().numpy()[0]
 
@@ -226,7 +222,7 @@ def main():
 
         # save rendered image
         frame_name = os.path.basename(img_path)
-        cv2.imwrite(os.path.join(output_folder,'images_smplx_overlay', args.cam_id, frame_name), vis_img[:, :, ::-1])
+        cv2.imwrite(os.path.join(output_folder, frame_name), vis_img[:, :, ::-1])
     for k, v in out.items(): 
         print(k, v.shape)
 
